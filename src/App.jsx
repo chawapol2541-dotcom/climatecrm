@@ -174,9 +174,10 @@ const gsPost = async (sheet, row) => {
 
 const gsGet = async (sheet) => {
   try {
-    const res = await fetch(`${GS_URL}?sheet=${sheet}`);
-    const data = await res.json();
-    return data.rows || [];
+    const res = await fetch(`${GS_URL}?sheet=${sheet}`, {
+      method:"GET", mode:"no-cors",
+    });
+    return [];
   } catch(e) { console.warn("GS load failed", e); return []; }
 };
 
@@ -1375,7 +1376,7 @@ const OppForm = ({initial,customers,opps,user,onSave,onClose,costSheets,onGoToCS
   const newOppCode=genOppCode(opps); const newQtNo=genQuoteNo(opps);
   const blank={id:newOppCode,custId:customers[0]?.id||"",oppCode:newOppCode,quoteNo:newQtNo,jobCode:"",serviceCode:SERVICES[0].code,serviceType:SERVICES[0].name,salesPrice:SERVICES[0].stdPrice,totalCost:SERVICES[0].stdCost,status:"Proposal",assignedTo:SALES_USERS[0]?.id||"",createdDate:today(),lostReason:"",activityLog:[],remark:""};
   const [f,sF] = useState(initial?{...initial,activityLog:initial.activityLog||[]}:blank);
-  const [tab,sTab] = useState(initTab);
+  const [tab,sTab] = useState("detail");
   const set=(k,v)=>sF(p=>({...p,[k]:v}));
   const isWon=f.status==="Won", isLost=f.status==="Lost";
   const mg=margin(f.salesPrice,f.totalCost||0);
