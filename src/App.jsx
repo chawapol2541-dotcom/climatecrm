@@ -160,7 +160,7 @@ const SEED_DELIVERIES = [];
 const SEED_COST_SHEETS = SERVICES.map(buildDefaultCS);
 
 // ── Google Sheets sync ────────────────────────────────────────
-const GS_URL = "https://script.google.com/macros/s/AKfycbx0mRFWViVKJ4FFqkUU7kPa5-MaDVzaALI1wgRvf2uscm1rpyPx8wxQnJGap5NjsL4/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycbyqjLMX1ENZ02kCvQSTpLeMBoVTm6V3rflmxkWFLG0ha2B9MyhcotqunBjhPb17TMM-/exec";
 
 const gsPost = async (sheet, row) => {
   try {
