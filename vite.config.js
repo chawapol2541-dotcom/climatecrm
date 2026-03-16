@@ -5,5 +5,5 @@ import react from '@vitejs/plugin-react'
 // e.g. if your repo URL is https://github.com/yourname/my-crm  → base: '/my-crm/'
 export default defineConfig({
   plugins: [react()],
-  base: '/climate-crm/',
+  base: '/climatecrm/',
 })
