@@ -160,14 +160,21 @@ const SEED_DELIVERIES = [];
 const SEED_COST_SHEETS = SERVICES.map(buildDefaultCS);
 
 // ── Google Sheets sync ────────────────────────────────────────
-const GS_URL = "https://script.google.com/macros/s/AKfycbyqjLMX1ENZ02kCvQSTpLeMBoVTm6V3rflmxkWFLG0ha2B9MyhcotqunBjhPb17TMM-/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycbwMVpE4KRpAADGvb7nM32vpjL5jB-JpWGDjvqjyyMj4c41Io9D67Vz8BZTgmWhk87O2/exec";
+
+const GS_HEADERS = {
+  Customers:    ["id","data"],
+  Opportunities:["id","data"],
+  Deliveries:   ["id","data"],
+  CostSheets_Std:["serviceCode","data"],
+};
 
 const gsPost = async (sheet, row) => {
   try {
     await fetch(GS_URL, {
       method:"POST", mode:"no-cors",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({sheet, row}),
+      body: JSON.stringify({sheet, row, header: GS_HEADERS[sheet]||null}),
     });
   } catch(e) { console.warn("GS sync failed", e); }
 };
@@ -177,14 +184,14 @@ const gsGet = (sheet) => new Promise((resolve) => {
   const script = document.createElement("script");
   const timer = setTimeout(() => {
     delete window[cb];
-    document.body.removeChild(script);
+    if(document.body.contains(script)) document.body.removeChild(script);
     console.warn("GS timeout", sheet);
     resolve([]);
   }, 8000);
   window[cb] = (data) => {
     clearTimeout(timer);
     delete window[cb];
-    document.body.removeChild(script);
+    if(document.body.contains(script)) document.body.removeChild(script);
     resolve(data.rows || []);
   };
   script.src = `${GS_URL}?sheet=${encodeURIComponent(sheet)}&callback=${cb}`;
@@ -1386,7 +1393,7 @@ const OppForm = ({initial,customers,opps,user,onSave,onClose,costSheets,onGoToCS
   const newOppCode=genOppCode(opps); const newQtNo=genQuoteNo(opps);
   const blank={id:newOppCode,custId:customers[0]?.id||"",oppCode:newOppCode,quoteNo:newQtNo,jobCode:"",serviceCode:SERVICES[0].code,serviceType:SERVICES[0].name,salesPrice:SERVICES[0].stdPrice,totalCost:SERVICES[0].stdCost,status:"Proposal",assignedTo:SALES_USERS[0]?.id||"",createdDate:today(),lostReason:"",activityLog:[],remark:""};
   const [f,sF] = useState(initial?{...initial,activityLog:initial.activityLog||[]}:blank);
-  const [tab,sTab] = useState(initTab);
+  const [tab,sTab] = useState("detail");
   const set=(k,v)=>sF(p=>({...p,[k]:v}));
   const isWon=f.status==="Won", isLost=f.status==="Lost";
   const mg=margin(f.salesPrice,f.totalCost||0);
@@ -2882,7 +2889,12 @@ export default function App() {
 
   // ── Save helpers — update state + sync to GS ──────────────
   const saveItem = (setter, sheet) => item => {
-    setter(p => p.find(x=>x.id===item.id) ? p.map(x=>x.id===item.id?item:x) : [...p,item]);
+    setter(p => {
+      // merge with latest local state to prevent overwrite conflict
+      const existing = p.find(x => x.id === item.id);
+      if(existing) return p.map(x => x.id === item.id ? {...existing, ...item} : x);
+      return [...p, item];
+    });
     if(sheet) gsPost(sheet, [item.id, JSON.stringify(item)]);
   };
 
