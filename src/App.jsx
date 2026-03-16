@@ -160,7 +160,7 @@ const SEED_DELIVERIES = [];
 const SEED_COST_SHEETS = SERVICES.map(buildDefaultCS);
 
 // ── Google Sheets sync ────────────────────────────────────────
-const GS_URL = "https://script.google.com/macros/s/AKfycby-rNyNJE9kbnnEvoG4rCo5rTAQr9rCvSLyr3weiGyTDCcUP1OSF-yJA7BSoTcMsGjy/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycbx0mRFWViVKJ4FFqkUU7kPa5-MaDVzaALI1wgRvf2uscm1rpyPx8wxQnJGap5NjsL4/exec";
 
 const gsPost = async (sheet, row) => {
   try {
@@ -172,14 +172,24 @@ const gsPost = async (sheet, row) => {
   } catch(e) { console.warn("GS sync failed", e); }
 };
 
-const gsGet = async (sheet) => {
-  try {
-    const res = await fetch(`${GS_URL}?sheet=${encodeURIComponent(sheet)}`);
-    if(!res.ok) return [];
-    const data = await res.json();
-    return data.rows || [];
-  } catch(e) { console.warn("GS load failed", e); return []; }
-};
+const gsGet = (sheet) => new Promise((resolve) => {
+  const cb = "cb_" + Math.random().toString(36).slice(2);
+  const script = document.createElement("script");
+  const timer = setTimeout(() => {
+    delete window[cb];
+    document.body.removeChild(script);
+    console.warn("GS timeout", sheet);
+    resolve([]);
+  }, 8000);
+  window[cb] = (data) => {
+    clearTimeout(timer);
+    delete window[cb];
+    document.body.removeChild(script);
+    resolve(data.rows || []);
+  };
+  script.src = `${GS_URL}?sheet=${encodeURIComponent(sheet)}&callback=${cb}`;
+  document.body.appendChild(script);
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // UI PRIMITIVES
