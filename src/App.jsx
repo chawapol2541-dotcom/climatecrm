@@ -2850,7 +2850,7 @@ export default function App() {
   const [gsLoading,setGsLoading] = useState(false);
   const {toasts,show:toast}  = useToast();
 
-  // ── Load all data from Google Sheets on login ──────────────
+  // ── Load all data from Google Sheets after login ──────────────
   const loadFromGS = useCallback(async () => {
     setGsLoading(true);
     try {
@@ -2877,6 +2877,9 @@ export default function App() {
     setGsLoading(false);
   }, []);
 
+  // trigger load once after user logs in
+  useEffect(() => { if(user) loadFromGS(); }, [user]);
+
   // ── Save helpers — update state + sync to GS ──────────────
   const saveItem = (setter, sheet) => item => {
     setter(p => p.find(x=>x.id===item.id) ? p.map(x=>x.id===item.id?item:x) : [...p,item]);
@@ -2888,7 +2891,7 @@ export default function App() {
     gsPost("CostSheets_Std", [cs.serviceCode, JSON.stringify(cs)]);
   };
 
-  if(!user) return <LoginPage onLogin={u=>{sUser(u);sPage("dashboard");loadFromGS();}}/>;
+  if(!user) return <LoginPage onLogin={u=>{sUser(u);sPage("dashboard");}}/>;
 
   return (
     <div style={{minHeight:"100vh",background:"#f8fafc",fontFamily:"'DM Sans','Noto Sans Thai',system-ui,sans-serif"}}>
